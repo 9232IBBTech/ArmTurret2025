@@ -25,6 +25,8 @@ import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.OperatorConstants;
+import frc.robot.commands.arm.ArmVelocityWithPositionCommand;
+import frc.robot.subsystems.ArmSubsystem;
 import frc.robot.subsystems.swervedrive.SwerveSubsystem;
 import java.io.File;
 import swervelib.SwerveInputStream;
@@ -96,11 +98,16 @@ public class RobotContainer
                                                                                .translationHeadingOffset(Rotation2d.fromDegrees(
                                                                                    0));
 
+  private final ArmSubsystem armSubsystem = new ArmSubsystem();
+
   /**
    * The container for the robot. Contains subsystems, OI devices, and commands.
    */
   public RobotContainer()
   {
+    ArmVelocityWithPositionCommand armVWPCommand = new ArmVelocityWithPositionCommand(armSubsystem, () -> driverXbox.leftBumper().getAsBoolean(), 0.03);
+    armSubsystem.setDefaultCommand(armVWPCommand);
+
     // Configure the trigger bindings
     drivebase.resetOdometry(new Pose2d(6, 4, new Rotation2d(Math.PI)));
     NamedCommands.registerCommand("start", Commands.runOnce(()-> drivebase.LLImuStart(), drivebase));
