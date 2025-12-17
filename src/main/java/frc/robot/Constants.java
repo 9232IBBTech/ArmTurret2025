@@ -54,5 +54,6 @@ public final class Constants
     public static final int ARM_MOTOR_ID = 5;
     public static final double ARM_MAX_ANGLE = 120.0;
     public static final double ALLOWED_ERROR = 0.02; // %2
+    public static final double GEAR_RATIO = 1.0/4.0;
   }
 }

@@ -14,7 +14,11 @@ import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
+import edu.wpi.first.units.measure.Voltage;
+import edu.wpi.first.units.Units;
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants;
 import frc.robot.Constants.ArmConstants;
 
@@ -25,6 +29,7 @@ public class ArmSubsystem extends SubsystemBase {
   private RelativeEncoder armEncoder;
   private SparkMaxConfig armConfig;
   private SparkClosedLoopController armPIDController;
+  private SysIdRoutine sysId;
 
   public ArmSubsystem() {
 
@@ -32,12 +37,23 @@ public class ArmSubsystem extends SubsystemBase {
     armConfig = new SparkMaxConfig();
 
     armEncoder = armMotor.getEncoder();
+    armEncoder.setPosition(0);
 
     armPIDController = armMotor.getClosedLoopController();
     
-    armConfig.idleMode(IdleMode.kCoast);
+    armConfig.smartCurrentLimit(40).idleMode(IdleMode.kBrake).voltageCompensation(12.0).encoder.positionConversionFactor(ArmConstants.GEAR_RATIO).positionConversionFactor(ArmConstants.GEAR_RATIO);
 
-    armMotor.configure(armConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
+    armMotor.configure(armConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+
+    sysId = new SysIdRoutine(new SysIdRoutine.Config(), new SysIdRoutine.Mechanism((voltage) -> setVoltage(voltage),
+                                                                                   log -> {log.motor("arm")
+                                                                                           .voltage(Units.Volts.of(armMotor.getBusVoltage() * armMotor.getAppliedOutput()))
+                                                                                           .linearPosition(Units.Meters.of(armEncoder.getPosition()))
+                                                                                           .linearVelocity(Units.MetersPerSecond.of(armEncoder.getVelocity()));},
+                                                                                   this));
+
+
+                                                                                   
   }
 
   @Override
@@ -71,6 +87,18 @@ public class ArmSubsystem extends SubsystemBase {
     armMotor.set(cycle);
   }
 
+  public void setVoltage(Voltage volts) {
+    armMotor.setVoltage(volts);
+  }
+
+  public double getPositionRad() {
+    return armEncoder.getPosition() * (2 * Math.PI /*/ ArmConstants.GEAR_RATIO*/);
+  }
+
+  public double getPositionRadPerSec() {
+    return armEncoder.getVelocity() * (2 * Math.PI /*/ ArmConstants.GEAR_RATIO*/) / 60.0; 
+  }
+
   public void setPosition(double setpoint) {
     armPIDController.setReference(setpoint, ControlType.kMAXMotionPositionControl, ClosedLoopSlot.kSlot0);
   }
@@ -88,5 +116,21 @@ public class ArmSubsystem extends SubsystemBase {
     double err = Math.abs(setpoint - getEncoderPosition());
 
     return err <= allowedErr;
+  }
+
+  public Command sysIdQuasistaticForward() {
+    return sysId.quasistatic(SysIdRoutine.Direction.kForward);
+  }
+
+  public Command sysIdQuasistaticReverse() {
+      return sysId.quasistatic(SysIdRoutine.Direction.kReverse);
+  }
+
+  public Command sysIdDynamicForward() {
+      return sysId.dynamic(SysIdRoutine.Direction.kForward);
+  }
+
+  public Command sysIdDynamicReverse() {
+      return sysId.dynamic(SysIdRoutine.Direction.kReverse);
   }
 }

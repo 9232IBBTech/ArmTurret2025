@@ -107,7 +107,7 @@ public class RobotContainer
   {
     ArmVelocityWithPositionCommand armVWPCommand = new ArmVelocityWithPositionCommand(armSubsystem, () -> driverXbox.leftBumper().getAsBoolean(), 0.03);
     armSubsystem.setDefaultCommand(armVWPCommand);
-
+    //devayı çok seviyorum - aras
     // Configure the trigger bindings
     drivebase.resetOdometry(new Pose2d(6, 4, new Rotation2d(Math.PI)));
     NamedCommands.registerCommand("start", Commands.runOnce(()-> drivebase.LLImuStart(), drivebase));
@@ -169,6 +169,12 @@ public class RobotContainer
 //          drivebase.driveToPose(
 //              new Pose2d(new Translation2d(4, 4), Rotation2d.fromDegrees(0)))
 //                              );
+
+    driverXbox.y().onTrue(armSubsystem.sysIdQuasistaticForward());
+    driverXbox.x().onTrue(armSubsystem.sysIdQuasistaticReverse());
+    driverXbox.b().onTrue(armSubsystem.sysIdDynamicForward());
+    driverXbox.a().onTrue(armSubsystem.sysIdDynamicReverse());
+
 
     }
     if (DriverStation.isTest())
