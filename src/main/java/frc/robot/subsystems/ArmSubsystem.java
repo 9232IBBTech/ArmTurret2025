@@ -15,6 +15,7 @@ import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
 import edu.wpi.first.units.measure.Voltage;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -42,16 +43,23 @@ public class ArmSubsystem extends SubsystemBase {
     armPIDController = armMotor.getClosedLoopController();
     
     armConfig.smartCurrentLimit(40).idleMode(IdleMode.kBrake).voltageCompensation(12.0).encoder.positionConversionFactor(ArmConstants.GEAR_RATIO).positionConversionFactor(ArmConstants.GEAR_RATIO);
+    armConfig.inverted(true).softLimit.forwardSoftLimitEnabled(true).forwardSoftLimit((ArmConstants.ARM_SYSID_MAX_ANGLE - 20.0)/360.0).reverseSoftLimitEnabled(true).reverseSoftLimit(ArmConstants.ARM_MIN_ANGLE /360.0);
 
     armMotor.configure(armConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
-    sysId = new SysIdRoutine(new SysIdRoutine.Config(), new SysIdRoutine.Mechanism((voltage) -> setVoltage(voltage),
+    sysId = new SysIdRoutine(new SysIdRoutine.Config(
+      null, //Units.Volts.per(Units.Second).of(0.8),
+      null, //Units.Volts.of(5.0),
+      null,
+      (state) -> SmartDashboard.putString("SysID", state.toString())
+    ), new SysIdRoutine.Mechanism((voltage) -> setVoltage(voltage),
                                                                                    log -> {log.motor("arm")
                                                                                            .voltage(Units.Volts.of(armMotor.getBusVoltage() * armMotor.getAppliedOutput()))
                                                                                            .linearPosition(Units.Meters.of(armEncoder.getPosition()))
                                                                                            .linearVelocity(Units.MetersPerSecond.of(armEncoder.getVelocity()));},
                                                                                    this));
 
+    
 
                                                                                    
   }
@@ -59,6 +67,9 @@ public class ArmSubsystem extends SubsystemBase {
   @Override
   public void periodic() {
     // This method will be called once per scheduler run
+    SmartDashboard.putNumber("Encoder Reading: ", armEncoder.getPosition());
+    // SmartDashboard.putNumber("SoftLimit", armMotor.configAccessor.softLimit.getForwardSoftLimit());
+    // SmartDashboard.putBoolean("Limit hit", armMotor.getFault(SparkMax.FaultID.kSoftLimitFwd));
   }
 
   public void zeroEncoder() {
@@ -119,18 +130,23 @@ public class ArmSubsystem extends SubsystemBase {
   }
 
   public Command sysIdQuasistaticForward() {
+    System.out.println("Running Quasistatic Forward");
     return sysId.quasistatic(SysIdRoutine.Direction.kForward);
   }
 
   public Command sysIdQuasistaticReverse() {
+    System.out.println("Running Quasistatic Reverse");
       return sysId.quasistatic(SysIdRoutine.Direction.kReverse);
   }
 
   public Command sysIdDynamicForward() {
+    System.out.println("Running Dynamic Forward");
       return sysId.dynamic(SysIdRoutine.Direction.kForward);
   }
 
   public Command sysIdDynamicReverse() {
+    System.out.println("Running Dynamic Reverse");
+    // SmartDashboard.putBoolean("tamam", true);
       return sysId.dynamic(SysIdRoutine.Direction.kReverse);
   }
 }

@@ -105,8 +105,8 @@ public class RobotContainer
    */
   public RobotContainer()
   {
-    ArmVelocityWithPositionCommand armVWPCommand = new ArmVelocityWithPositionCommand(armSubsystem, () -> driverXbox.leftBumper().getAsBoolean(), 0.03);
-    armSubsystem.setDefaultCommand(armVWPCommand);
+    //ArmVelocityWithPositionCommand armVWPCommand = new ArmVelocityWithPositionCommand(armSubsystem, () -> driverXbox.leftBumper().getAsBoolean(), 0.03);
+    //armSubsystem.setDefaultCommand(armVWPCommand);
     //devayı çok seviyorum - aras
     // Configure the trigger bindings
     drivebase.resetOdometry(new Pose2d(6, 4, new Rotation2d(Math.PI)));
@@ -135,6 +135,13 @@ public class RobotContainer
     Command driveFieldOrientedAnglularVelocityKeyboard = drivebase.driveFieldOriented(driveAngularVelocityKeyboard);
     Command driveSetpointGenKeyboard = drivebase.driveWithSetpointGeneratorFieldRelative(
         driveDirectAngleKeyboard);
+
+        driverXbox.y().onTrue(armSubsystem.sysIdQuasistaticForward());
+        driverXbox.x().onTrue(armSubsystem.sysIdQuasistaticReverse());
+        driverXbox.b().onTrue(armSubsystem.sysIdDynamicForward());
+        driverXbox.a().onTrue(armSubsystem.sysIdDynamicReverse());
+        driverXbox.leftBumper().onTrue(Commands.runOnce(() -> {armSubsystem.setMotor(0);}, armSubsystem));
+        driverXbox.rightBumper().onTrue(Commands.runOnce(armSubsystem::zeroEncoder, armSubsystem));
 
     if (RobotBase.isSimulation())
     {
@@ -170,10 +177,7 @@ public class RobotContainer
 //              new Pose2d(new Translation2d(4, 4), Rotation2d.fromDegrees(0)))
 //                              );
 
-    driverXbox.y().onTrue(armSubsystem.sysIdQuasistaticForward());
-    driverXbox.x().onTrue(armSubsystem.sysIdQuasistaticReverse());
-    driverXbox.b().onTrue(armSubsystem.sysIdDynamicForward());
-    driverXbox.a().onTrue(armSubsystem.sysIdDynamicReverse());
+    
 
 
     }
