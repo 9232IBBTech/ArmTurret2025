@@ -231,7 +231,7 @@ public class SwerveSubsystem extends SubsystemBase
     if (visionDriveTest)
     {
       if(firstPeriodic){
-        LimelightHelpers.SetIMUMode("limelight-solon", 2);
+        // LimelightHelpers.SetIMUMode("limelight-solon", 2);
         //LimelightHelpers.SetIMUMode("limelight-sagon", 1);
         firstPeriodic = false;
         
@@ -240,16 +240,18 @@ public class SwerveSubsystem extends SubsystemBase
       swerveDrive.updateOdometry();
       
       //LimelightHelpers.SetRobotOrientation("limelight-sagon", LimelightHelpers.getIMUData("limelight-solon").robotYaw, 0, 0, 0, 0, 0);
-      LimelightHelpers.PoseEstimate mt2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight-solon");
+      // LimelightHelpers.PoseEstimate mt2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight-solon");
       //LimelightHelpers.PoseEstimate mt2sag = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight-sagon");
       
+      
+      /* 
       boolean doRejectUpdate = false;
       // if our angular velocity is greater than 360 degrees per second, ignore vision updates
       if(Math.abs(Math.toDegrees(swerveDrive.getRobotVelocity().omegaRadiansPerSecond)) > 360)
       {
         doRejectUpdate = true;
       }
-      if(mt2.tagCount == 0 /*&& mt2sag.tagCount == 0*/)
+      if(mt2.tagCount == 0 )// && mt2sag.tagCount == 0
       {
         doRejectUpdate = true;
       }
@@ -279,8 +281,10 @@ public class SwerveSubsystem extends SubsystemBase
     new Rotation3d(0, Math.toRadians(-20), Math.toRadians(-40))
 );
 
+
+
       
-        Pose3d tagToRobot = LimelightHelpers.getTargetPose3d_RobotSpace("limelight-solon");
+        /*Pose3d tagToRobot = LimelightHelpers.getTargetPose3d_RobotSpace("limelight-solon");
         SmartDashboard.putNumberArray("Limelight/Poses/TagArray", LimelightHelpers.getTargetPose_RobotSpace("limelight-solon"));
         tagToRobot = new Pose3d(LimelightHelpers.getTargetPose_RobotSpace("limelight-solon")[2],
         -LimelightHelpers.getTargetPose_RobotSpace("limelight-solon")[0],
@@ -303,7 +307,7 @@ public class SwerveSubsystem extends SubsystemBase
       
       }
       SmartDashboard.putNumber("Limelight/Poses/IMUYaw", LimelightHelpers.getIMUData("limelight-solon").Yaw);
-      SmartDashboard.putNumber("Limelight/Poses/IMURobotYaw", LimelightHelpers.getIMUData("limelight-solon").robotYaw);
+      SmartDashboard.putNumber("Limelight/Poses/IMURobotYaw", LimelightHelpers.getIMUData("limelight-solon").robotYaw); */
     }
     
   }

@@ -42,21 +42,22 @@ public class ArmSubsystem extends SubsystemBase {
 
     armPIDController = armMotor.getClosedLoopController();
     
+    // TODO; Current limit
     armConfig.smartCurrentLimit(40).idleMode(IdleMode.kBrake).voltageCompensation(12.0).encoder.positionConversionFactor(ArmConstants.GEAR_RATIO).positionConversionFactor(ArmConstants.GEAR_RATIO);
-    armConfig.inverted(true).softLimit.forwardSoftLimitEnabled(true).forwardSoftLimit((ArmConstants.ARM_SYSID_MAX_ANGLE - 20.0)/360.0).reverseSoftLimitEnabled(true).reverseSoftLimit(ArmConstants.ARM_MIN_ANGLE /360.0);
+    armConfig.inverted(true).softLimit.forwardSoftLimitEnabled(true).forwardSoftLimit((60)/360.0).reverseSoftLimitEnabled(true).reverseSoftLimit((ArmConstants.ARM_MIN_ANGLE + 10.0)/360.0);
 
     armMotor.configure(armConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
     sysId = new SysIdRoutine(new SysIdRoutine.Config(
-      null, //Units.Volts.per(Units.Second).of(0.8),
-      null, //Units.Volts.of(5.0),
+      Units.Volts.per(Units.Second).of(0.4),
+      Units.Volts.of(1.0),
       null,
       (state) -> SmartDashboard.putString("SysID", state.toString())
     ), new SysIdRoutine.Mechanism((voltage) -> setVoltage(voltage),
                                                                                    log -> {log.motor("arm")
                                                                                            .voltage(Units.Volts.of(armMotor.getBusVoltage() * armMotor.getAppliedOutput()))
-                                                                                           .linearPosition(Units.Meters.of(armEncoder.getPosition()))
-                                                                                           .linearVelocity(Units.MetersPerSecond.of(armEncoder.getVelocity()));},
+                                                                                           .angularPosition(Units.Radians.of(getPositionRad()))
+                                                                                           .angularVelocity(Units.RadiansPerSecond.of(getPositionRadPerSec()));},
                                                                                    this));
 
     
@@ -68,6 +69,7 @@ public class ArmSubsystem extends SubsystemBase {
   public void periodic() {
     // This method will be called once per scheduler run
     SmartDashboard.putNumber("Encoder Reading: ", armEncoder.getPosition());
+    SmartDashboard.putNumber("the voltage", armMotor.getBusVoltage() * armMotor.getAppliedOutput());
     // SmartDashboard.putNumber("SoftLimit", armMotor.configAccessor.softLimit.getForwardSoftLimit());
     // SmartDashboard.putBoolean("Limit hit", armMotor.getFault(SparkMax.FaultID.kSoftLimitFwd));
   }
