@@ -4,6 +4,9 @@
 
 package frc.robot.subsystems;
 
+import static edu.wpi.first.units.Units.Radians;
+import static edu.wpi.first.units.Units.RadiansPerSecond;
+
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.ClosedLoopSlot;
 import com.revrobotics.spark.SparkClosedLoopController;
@@ -14,7 +17,12 @@ import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
+import edu.wpi.first.units.measure.MutAngle;
+import edu.wpi.first.units.measure.MutAngularVelocity;
+import edu.wpi.first.units.measure.MutVelocity;
+import edu.wpi.first.units.measure.MutVoltage;
 import edu.wpi.first.units.measure.Voltage;
+import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -32,32 +40,36 @@ public class ArmSubsystem extends SubsystemBase {
   private SparkClosedLoopController armPIDController;
   private SysIdRoutine sysId;
 
+  private final MutAngle mut_AnglePosition = new MutAngle(0, 0, Radians);
+  private final MutVoltage mut_AppliedVoltage = new MutVoltage(0, 0, Units.Volts);
+  private final MutAngularVelocity mut_AngularVelocity = new MutAngularVelocity(0, 0, Units.RadiansPerSecond);
+
   public ArmSubsystem() {
 
     armMotor =  new SparkMax(Constants.ArmConstants.ARM_MOTOR_ID, SparkMax.MotorType.kBrushless);
     armConfig = new SparkMaxConfig();
 
     armEncoder = armMotor.getEncoder();
-    armEncoder.setPosition(0);
+    armEncoder.setPosition(0.059523817151785);
 
     armPIDController = armMotor.getClosedLoopController();
     
     // TODO; Current limit
     armConfig.smartCurrentLimit(40).idleMode(IdleMode.kBrake).voltageCompensation(12.0).encoder.positionConversionFactor(ArmConstants.GEAR_RATIO).positionConversionFactor(ArmConstants.GEAR_RATIO);
-    armConfig.inverted(true).softLimit.forwardSoftLimitEnabled(true).forwardSoftLimit((60)/360.0).reverseSoftLimitEnabled(true).reverseSoftLimit((ArmConstants.ARM_MIN_ANGLE + 10.0)/360.0);
+    armConfig.inverted(true).softLimit.forwardSoftLimitEnabled(true).forwardSoftLimit((65)/360.0).reverseSoftLimitEnabled(true).reverseSoftLimit((21.4)/360.0);
 
     armMotor.configure(armConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
     sysId = new SysIdRoutine(new SysIdRoutine.Config(
-      Units.Volts.per(Units.Second).of(0.4),
+      Units.Volts.per(Units.Second).of(0.3),
       Units.Volts.of(1.0),
       null,
-      (state) -> SmartDashboard.putString("SysID", state.toString())
+      null // otomatik record
     ), new SysIdRoutine.Mechanism((voltage) -> setVoltage(voltage),
-                                                                                   log -> {log.motor("arm")
-                                                                                           .voltage(Units.Volts.of(armMotor.getBusVoltage() * armMotor.getAppliedOutput()))
-                                                                                           .angularPosition(Units.Radians.of(getPositionRad()))
-                                                                                           .angularVelocity(Units.RadiansPerSecond.of(getPositionRadPerSec()));},
+                                                                                   log -> {log.motor("arm-motor")
+                                                                                           .voltage(mut_AppliedVoltage.mut_replace(armMotor.getBusVoltage() * armMotor.getAppliedOutput(), Units.Volts))
+                                                                                           .angularPosition(mut_AnglePosition.mut_replace(getPositionRad(), Radians))
+                                                                                           .angularVelocity(mut_AngularVelocity.mut_replace(getPositionRadPerSec(), RadiansPerSecond));},
                                                                                    this));
 
     

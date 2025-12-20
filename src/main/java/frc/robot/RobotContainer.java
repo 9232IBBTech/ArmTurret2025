@@ -21,6 +21,7 @@ import edu.wpi.first.wpilibj.XboxController.Button;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -136,7 +137,11 @@ public class RobotContainer
     Command driveSetpointGenKeyboard = drivebase.driveWithSetpointGeneratorFieldRelative(
         driveDirectAngleKeyboard);
 
-        driverXbox.y().onTrue(armSubsystem.sysIdQuasistaticForward());
+        driverXbox.y().onTrue(new SequentialCommandGroup(armSubsystem.sysIdQuasistaticForward(), 
+                                                         armSubsystem.sysIdQuasistaticReverse(),
+                                                         armSubsystem.sysIdDynamicForward(),
+                                                         armSubsystem.sysIdDynamicReverse()
+                                                         ));
         driverXbox.x().onTrue(armSubsystem.sysIdQuasistaticReverse());
         driverXbox.b().onTrue(armSubsystem.sysIdDynamicForward());
         driverXbox.a().onTrue(armSubsystem.sysIdDynamicReverse());
@@ -212,8 +217,8 @@ public class RobotContainer
   {
     // An example command will be run in autonomous
    //return drivebase.getAutonomousCommand("Start");
-   // return /*drivebase.sysIdDriveMotorCommand();*/  Commands.runOnce(()-> drivebase.LLImuStart(), drivebase);
-   return new PathPlannerAuto("Parabol Oto");
+   return /*drivebase.sysIdDriveMotorCommand();*/  Commands.runOnce(()-> drivebase.LLImuStart(), drivebase);
+   // return new PathPlannerAuto("Parabol Oto");
 
   }
 
