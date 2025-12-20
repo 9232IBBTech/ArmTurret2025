@@ -30,6 +30,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants;
 import frc.robot.Constants.ArmConstants;
+import frc.robot.Constants.MotorConstants;
 
 public class ArmSubsystem extends SubsystemBase {
   /** Creates a new ArmSubsystem. */
@@ -40,7 +41,7 @@ public class ArmSubsystem extends SubsystemBase {
   private SparkClosedLoopController armPIDController;
   private SysIdRoutine sysId;
 
-  private final MutAngle mut_AnglePosition = new MutAngle(0, 0, Radians);
+  private final MutAngle mut_AnglePosition = new MutAngle(0, 0, Radians); // CPU korumaları
   private final MutVoltage mut_AppliedVoltage = new MutVoltage(0, 0, Units.Volts);
   private final MutAngularVelocity mut_AngularVelocity = new MutAngularVelocity(0, 0, Units.RadiansPerSecond);
 
@@ -50,30 +51,35 @@ public class ArmSubsystem extends SubsystemBase {
     armConfig = new SparkMaxConfig();
 
     armEncoder = armMotor.getEncoder();
-    armEncoder.setPosition(0.059523817151785);
+    armEncoder.setPosition(0);
 
     armPIDController = armMotor.getClosedLoopController();
-    
-    // TODO; Current limit
-    armConfig.smartCurrentLimit(40).idleMode(IdleMode.kBrake).voltageCompensation(12.0).encoder.positionConversionFactor(ArmConstants.GEAR_RATIO).positionConversionFactor(ArmConstants.GEAR_RATIO);
-    armConfig.inverted(true).softLimit.forwardSoftLimitEnabled(true).forwardSoftLimit((65)/360.0).reverseSoftLimitEnabled(true).reverseSoftLimit((21.4)/360.0);
+
+    armConfig.smartCurrentLimit(40)
+              .voltageCompensation(12.0)
+              .idleMode(IdleMode.kCoast)
+              .encoder
+              .positionConversionFactor(ArmConstants.GEAR_RATIO * 360.0) // derece cinsinden
+              .velocityConversionFactor(ArmConstants.GEAR_RATIO); // rotation
+
+    armConfig.inverted(true)
+              .softLimit
+              .forwardSoftLimitEnabled(true)
+              .forwardSoftLimit(ArmConstants.ARM_MAX_ANGLE)
+              .reverseSoftLimitEnabled(true)
+              .reverseSoftLimit(ArmConstants.ARM_MIN_ANGLE);
+
+    armConfig.closedLoop
+              .p(1.0/MotorConstants.NEO_MAX_RPM)
+              .i(0)
+              .d(0)
+              .outputRange(-1, 1);
+        
+    armConfig.closedLoop.maxMotion
+              .
+
 
     armMotor.configure(armConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-
-    sysId = new SysIdRoutine(new SysIdRoutine.Config(
-      Units.Volts.per(Units.Second).of(0.3),
-      Units.Volts.of(1.0),
-      null,
-      null // otomatik record
-    ), new SysIdRoutine.Mechanism((voltage) -> setVoltage(voltage),
-                                                                                   log -> {log.motor("arm-motor")
-                                                                                           .voltage(mut_AppliedVoltage.mut_replace(armMotor.getBusVoltage() * armMotor.getAppliedOutput(), Units.Volts))
-                                                                                           .angularPosition(mut_AnglePosition.mut_replace(getPositionRad(), Radians))
-                                                                                           .angularVelocity(mut_AngularVelocity.mut_replace(getPositionRadPerSec(), RadiansPerSecond));},
-                                                                                   this));
-
-    
-
                                                                                    
   }
 
@@ -90,7 +96,7 @@ public class ArmSubsystem extends SubsystemBase {
     armEncoder.setPosition(0);
   }
 
-  public void setEncoderPositon(double positon) {
+  public void setEncoderPositon(double positon) { // derece cinsinden
     armEncoder.setPosition(positon);
   }
 
@@ -117,7 +123,7 @@ public class ArmSubsystem extends SubsystemBase {
   }
 
   public double getPositionRad() {
-    return armEncoder.getPosition() * (2 * Math.PI /*/ ArmConstants.GEAR_RATIO*/);
+    return (armEncoder.getPosition() / 360.0) * (2 * Math.PI /*/ ArmConstants.GEAR_RATIO*/);
   }
 
   public double getPositionRadPerSec() {
@@ -141,6 +147,28 @@ public class ArmSubsystem extends SubsystemBase {
     double err = Math.abs(setpoint - getEncoderPosition());
 
     return err <= allowedErr;
+  }
+
+  public void readySysIDRoutine() {
+
+    // TODO; Current limit
+    armConfig.smartCurrentLimit(40).idleMode(IdleMode.kBrake).voltageCompensation(12.0).encoder.positionConversionFactor(ArmConstants.GEAR_RATIO).positionConversionFactor(ArmConstants.GEAR_RATIO);
+    armConfig.inverted(true).softLimit.forwardSoftLimitEnabled(true).forwardSoftLimit((65)/360.0).reverseSoftLimitEnabled(true).reverseSoftLimit((21.4)/360.0);
+
+    armMotor.configure(armConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+
+    sysId = new SysIdRoutine(new SysIdRoutine.Config(
+      Units.Volts.per(Units.Second).of(0.3),
+      Units.Volts.of(1.0),
+      null,
+      null // otomatik record
+    ), new SysIdRoutine.Mechanism((voltage) -> setVoltage(voltage),
+                                                                                   log -> {log.motor("arm-motor")
+                                                                                           .voltage(mut_AppliedVoltage.mut_replace(armMotor.getBusVoltage() * armMotor.getAppliedOutput(), Units.Volts))
+                                                                                           .angularPosition(mut_AnglePosition.mut_replace(getPositionRad(), Radians))
+                                                                                           .angularVelocity(mut_AngularVelocity.mut_replace(getPositionRadPerSec(), RadiansPerSecond));},
+                                                                                   this));
+
   }
 
   public Command sysIdQuasistaticForward() {

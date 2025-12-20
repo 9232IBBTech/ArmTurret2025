@@ -106,7 +106,7 @@ public class RobotContainer
    */
   public RobotContainer()
   {
-    //ArmVelocityWithPositionCommand armVWPCommand = new ArmVelocityWithPositionCommand(armSubsystem, () -> driverXbox.leftBumper().getAsBoolean(), 0.03);
+    //ArmVelocityWithPositionCommand armVWPCommand = new ArmVelocityWithPositionCommand(armSubsystem, () -> driverXbox.leftBumper().getAsBoolean(), 0.03 rotations);
     //armSubsystem.setDefaultCommand(armVWPCommand);
     //devayı çok seviyorum - aras
     // Configure the trigger bindings

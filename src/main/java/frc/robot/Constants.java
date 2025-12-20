@@ -49,6 +49,12 @@ public final class Constants
     public static final double TURN_CONSTANT    = 6;
   }
 
+  public static class MotorConstants
+  {
+    public static final double NEO_MAX_RPM = 5676.0;
+    public static final double NEO_kV = 473.0;
+  }
+
   public static class ArmConstants
   {
     public static final int ARM_MOTOR_ID = 15;
