@@ -24,6 +24,7 @@ import edu.wpi.first.units.measure.MutVoltage;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -44,6 +45,7 @@ public class ArmSubsystem extends SubsystemBase {
   private final MutAngle mut_AnglePosition = new MutAngle(0, 0, Radians); // CPU korumaları
   private final MutVoltage mut_AppliedVoltage = new MutVoltage(0, 0, Units.Volts);
   private final MutAngularVelocity mut_AngularVelocity = new MutAngularVelocity(0, 0, Units.RadiansPerSecond);
+  private final ArmFeedforward armFF = new ArmFeedforward(60, 0.6, 0.49, 0.53973); // 2.3449, 2.03, 0.49, 0.53973
 
   public ArmSubsystem() {
 
@@ -57,9 +59,9 @@ public class ArmSubsystem extends SubsystemBase {
 
     armConfig.smartCurrentLimit(40)
               .voltageCompensation(12.0)
-              .idleMode(IdleMode.kCoast)
+              .idleMode(IdleMode.kBrake)
               .encoder
-              .positionConversionFactor(ArmConstants.GEAR_RATIO * 360.0) // derece cinsinden
+              .positionConversionFactor(ArmConstants.GEAR_RATIO * 360) // derece cinsinden
               .velocityConversionFactor(ArmConstants.GEAR_RATIO); // rotation
 
     armConfig.inverted(true)
@@ -69,14 +71,19 @@ public class ArmSubsystem extends SubsystemBase {
               .reverseSoftLimitEnabled(true)
               .reverseSoftLimit(ArmConstants.ARM_MIN_ANGLE);
 
+
     armConfig.closedLoop
               .p(1.0/MotorConstants.NEO_MAX_RPM)
               .i(0)
               .d(0)
               .outputRange(-1, 1);
-        
-    armConfig.closedLoop.maxMotion
-              .
+
+    armConfig.closedLoop
+              .maxMotion
+              .maxAcceleration(1500)
+              .maxVelocity(2500)
+              .allowedClosedLoopError(0);
+
 
 
     armMotor.configure(armConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
@@ -130,8 +137,28 @@ public class ArmSubsystem extends SubsystemBase {
     return armEncoder.getVelocity() * (2 * Math.PI /*/ ArmConstants.GEAR_RATIO*/) / 60.0; 
   }
 
-  public void setPosition(double setpoint) {
-    armPIDController.setReference(setpoint, ControlType.kMAXMotionPositionControl, ClosedLoopSlot.kSlot0);
+  public void setPosition(double setpointDeg) {
+    double angleRads = Math.toRadians(setpointDeg);
+    double velocityRadPerSeconds = 0.0;
+
+    double ffVolts = armFF.calculate(angleRads, velocityRadPerSeconds);
+
+    SmartDashboard.putNumber("Target Angle Rad", angleRads);
+    SmartDashboard.putNumber("Applied FF Volts", ffVolts);
+
+    armPIDController.setReference(setpointDeg, ControlType.kMAXMotionPositionControl, ClosedLoopSlot.kSlot0, ffVolts, SparkClosedLoopController.ArbFFUnits.kVoltage);
+  }
+
+  public void setPosition(ArmFeedforward ff ,double setpointDeg) {
+    double angleRads = Math.toRadians(setpointDeg);
+    double velocityRadPerSeconds = 0.0;
+
+    double ffVolts = ff.calculate(angleRads, velocityRadPerSeconds);
+
+    SmartDashboard.putNumber("Target Angle Rad", angleRads);
+    SmartDashboard.putNumber("Applied FF Volts", ffVolts);
+
+    armPIDController.setReference(setpointDeg, ControlType.kMAXMotionPositionControl, ClosedLoopSlot.kSlot0, ffVolts, SparkClosedLoopController.ArbFFUnits.kVoltage);
   }
 
   public double getEncoderPosition() {

@@ -27,6 +27,7 @@ import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.commands.arm.ArmVelocityWithPositionCommand;
+import frc.robot.commands.arm.StationaryArmCommand;
 import frc.robot.subsystems.ArmSubsystem;
 import frc.robot.subsystems.swervedrive.SwerveSubsystem;
 import java.io.File;
@@ -107,7 +108,8 @@ public class RobotContainer
   public RobotContainer()
   {
     //ArmVelocityWithPositionCommand armVWPCommand = new ArmVelocityWithPositionCommand(armSubsystem, () -> driverXbox.leftBumper().getAsBoolean(), 0.03 rotations);
-    //armSubsystem.setDefaultCommand(armVWPCommand);
+
+    armSubsystem.setDefaultCommand(new StationaryArmCommand(armSubsystem));
     //devayı çok seviyorum - aras
     // Configure the trigger bindings
     drivebase.resetOdometry(new Pose2d(6, 4, new Rotation2d(Math.PI)));
@@ -137,14 +139,7 @@ public class RobotContainer
     Command driveSetpointGenKeyboard = drivebase.driveWithSetpointGeneratorFieldRelative(
         driveDirectAngleKeyboard);
 
-        driverXbox.y().onTrue(new SequentialCommandGroup(armSubsystem.sysIdQuasistaticForward(), 
-                                                         armSubsystem.sysIdQuasistaticReverse(),
-                                                         armSubsystem.sysIdDynamicForward(),
-                                                         armSubsystem.sysIdDynamicReverse()
-                                                         ));
-        driverXbox.x().onTrue(armSubsystem.sysIdQuasistaticReverse());
-        driverXbox.b().onTrue(armSubsystem.sysIdDynamicForward());
-        driverXbox.a().onTrue(armSubsystem.sysIdDynamicReverse());
+        driverXbox.a().onTrue(Commands.run(() -> armSubsystem.setPosition(40), armSubsystem));
         driverXbox.leftBumper().onTrue(Commands.runOnce(() -> {armSubsystem.setMotor(0);}, armSubsystem));
         driverXbox.rightBumper().onTrue(Commands.runOnce(armSubsystem::zeroEncoder, armSubsystem));
 
