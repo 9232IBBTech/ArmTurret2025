@@ -64,5 +64,7 @@ public final class Constants
     public static final double ALLOWED_ERROR = 0.02; // %2
     public static final double GEAR_RATIO = 1.0/4.0;
     public static final double ALLOWED_ERROR_DEG = 1.0;
+    public static final double MANUAL_FORWARD_SPEED = 0.05;
+    public static final double MANUAL_REVERSE_SPEED = -0.05;
   }
 }

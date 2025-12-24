@@ -163,7 +163,7 @@ public class ArmSubsystem extends SubsystemBase {
   public void setPosition(double setpointDeg) {
     // allowedErr = Math.abs(setpointDeg * ArmConstants.ALLOWED_ERROR);
     double angleRads = Math.toRadians(setpointDeg);
-    double velocityRadPerSeconds = Math.PI / 2;
+    double velocityRadPerSeconds = Math.PI / 2; // TODO
 
     double ffVolts = armFF.calculate(angleRads, velocityRadPerSeconds);
 
@@ -184,6 +184,14 @@ public class ArmSubsystem extends SubsystemBase {
     SmartDashboard.putNumber("Applied FF Volts", ffVolts);
 
     armPIDController.setReference(setpointDeg, ControlType.kMAXMotionPositionControl, ClosedLoopSlot.kSlot0, ffVolts, SparkClosedLoopController.ArbFFUnits.kVoltage);
+  }
+
+  public void setVelocity(double cycle) {
+    double velocityRadPerSeconds = 2 * Math.PI * cycle;
+    double angleRads = 0.0;
+
+    double ffVolts = armFF.calculate(angleRads, velocityRadPerSeconds);
+    armPIDController.setReference(cycle, ControlType.kMAXMotionVelocityControl, ClosedLoopSlot.kSlot0, ffVolts, SparkClosedLoopController.ArbFFUnits.kVoltage);
   }
 
   public double getEncoderPosition() {
@@ -228,6 +236,11 @@ public class ArmSubsystem extends SubsystemBase {
                                                                                            .angularVelocity(mut_AngularVelocity.mut_replace(getPositionRadPerSec(), RadiansPerSecond));},
                                                                                    this));
 
+  }
+
+  public double calculateWithFF(double posRad, double velRad) {
+
+    return armFF.calculate(posRad, velRad);
   }
 
   public Command sysIdQuasistaticForward() {

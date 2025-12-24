@@ -29,9 +29,13 @@ import frc.robot.Constants.OperatorConstants;
 import frc.robot.commands.arm.ArmVelocityWithPositionCommand;
 import frc.robot.commands.arm.StationaryArmCommand;
 import frc.robot.commands.arm.ArmPositionCommand;
+import frc.robot.commands.arm.ArmVelocityCommand;
 import frc.robot.subsystems.ArmSubsystem;
 import frc.robot.subsystems.swervedrive.SwerveSubsystem;
+import frc.robot.Constants.ArmConstants;
 import java.io.File;
+import java.security.AlgorithmConstraints;
+
 import swervelib.SwerveInputStream;
 
 /**
@@ -143,6 +147,8 @@ public class RobotContainer
         driverXbox.a().onTrue(new ArmPositionCommand(armSubsystem, 70));
         driverXbox.leftBumper().onTrue(Commands.runOnce(() -> {armSubsystem.setMotor(0);}, armSubsystem));
         driverXbox.rightBumper().onTrue(Commands.runOnce(armSubsystem::zeroEncoder, armSubsystem));
+        driverXbox.y().whileTrue(new ArmVelocityCommand(armSubsystem, ArmConstants.MANUAL_FORWARD_SPEED));
+        driverXbox.b().whileTrue(new ArmVelocityCommand(armSubsystem, ArmConstants.MANUAL_REVERSE_SPEED));
 
     if (RobotBase.isSimulation())
     {
