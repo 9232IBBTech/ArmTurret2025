@@ -63,5 +63,6 @@ public final class Constants
     public static final double ARM_MIN_ANGLE = 0.0;
     public static final double ALLOWED_ERROR = 0.02; // %2
     public static final double GEAR_RATIO = 1.0/4.0;
+    public static final double ALLOWED_ERROR_DEG = 1.0;
   }
 }

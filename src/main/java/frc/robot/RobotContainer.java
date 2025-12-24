@@ -28,6 +28,7 @@ import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.commands.arm.ArmVelocityWithPositionCommand;
 import frc.robot.commands.arm.StationaryArmCommand;
+import frc.robot.commands.arm.ArmPositionCommand;
 import frc.robot.subsystems.ArmSubsystem;
 import frc.robot.subsystems.swervedrive.SwerveSubsystem;
 import java.io.File;
@@ -109,7 +110,7 @@ public class RobotContainer
   {
     //ArmVelocityWithPositionCommand armVWPCommand = new ArmVelocityWithPositionCommand(armSubsystem, () -> driverXbox.leftBumper().getAsBoolean(), 0.03 rotations);
 
-    armSubsystem.setDefaultCommand(new StationaryArmCommand(armSubsystem));
+    armSubsystem.setDefaultCommand(new StationaryArmCommand(armSubsystem)); // SICRAMAYA SEBEP OLUYOR
     //devayı çok seviyorum - aras
     // Configure the trigger bindings
     drivebase.resetOdometry(new Pose2d(6, 4, new Rotation2d(Math.PI)));
@@ -139,7 +140,7 @@ public class RobotContainer
     Command driveSetpointGenKeyboard = drivebase.driveWithSetpointGeneratorFieldRelative(
         driveDirectAngleKeyboard);
 
-        driverXbox.a().onTrue(Commands.run(() -> armSubsystem.setPosition(40), armSubsystem));
+        driverXbox.a().onTrue(new ArmPositionCommand(armSubsystem, 70));
         driverXbox.leftBumper().onTrue(Commands.runOnce(() -> {armSubsystem.setMotor(0);}, armSubsystem));
         driverXbox.rightBumper().onTrue(Commands.runOnce(armSubsystem::zeroEncoder, armSubsystem));
 

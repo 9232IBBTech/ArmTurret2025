@@ -4,7 +4,10 @@
 
 package frc.robot.commands.arm;
 
+import static edu.wpi.first.units.Units.Volts;
+
 import edu.wpi.first.math.controller.ArmFeedforward;
+import edu.wpi.first.units.measure.MutVoltage;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.ArmSubsystem;
@@ -14,7 +17,9 @@ public class StationaryArmCommand extends Command {
   /** Creates a new StattionaryArmCommand. */
 
   private ArmSubsystem armSubsystem;
-  private final ArmFeedforward armFF = new ArmFeedforward(0, 0.6, 0.0, 0.0);
+  private final ArmFeedforward armFF = new ArmFeedforward(0, 0.7, 0.0, 0.0);
+
+  private final MutVoltage volts = new MutVoltage(0, 0, Volts);
 
   public StationaryArmCommand(ArmSubsystem armSubsystem) {
     // Use addRequirements() here to declare subsystem dependencies.
@@ -33,7 +38,10 @@ public class StationaryArmCommand extends Command {
   // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
-    armSubsystem.setPosition(armFF, armSubsystem.getEncoderPosition());
+    armSubsystem.setPosition(armFF, armSubsystem.getEncoderPosition()); //OLMAAAAZZ
+    //volts.mut_replace(armFF.calculate(armSubsystem.getPositionRad(), 0), Volts);
+
+    //armSubsystem.setVoltage(volts);
   }
 
   // Called once the command ends or is interrupted.

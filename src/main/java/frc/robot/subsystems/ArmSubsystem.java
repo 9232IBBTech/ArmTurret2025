@@ -9,11 +9,13 @@ import static edu.wpi.first.units.Units.RadiansPerSecond;
 
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.spark.ClosedLoopSlot;
+import com.revrobotics.spark.SparkBase;
 import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
+import com.revrobotics.spark.config.SparkBaseConfig;
 import com.revrobotics.spark.config.SparkMaxConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
@@ -41,11 +43,12 @@ public class ArmSubsystem extends SubsystemBase {
   private SparkMaxConfig armConfig;
   private SparkClosedLoopController armPIDController;
   private SysIdRoutine sysId;
+  private double allowedErr;
 
   private final MutAngle mut_AnglePosition = new MutAngle(0, 0, Radians); // CPU korumaları
   private final MutVoltage mut_AppliedVoltage = new MutVoltage(0, 0, Units.Volts);
   private final MutAngularVelocity mut_AngularVelocity = new MutAngularVelocity(0, 0, Units.RadiansPerSecond);
-  private final ArmFeedforward armFF = new ArmFeedforward(60, 0.6, 0.49, 0.53973); // 2.3449, 2.03, 0.49, 0.53973
+  private final ArmFeedforward armFF = new ArmFeedforward(2, 0.6, 0.6, 0.6); // 2.3449, 2.03, 0.49, 0.53973
 
   public ArmSubsystem() {
 
@@ -73,20 +76,23 @@ public class ArmSubsystem extends SubsystemBase {
 
 
     armConfig.closedLoop
-              .p(1.0/MotorConstants.NEO_MAX_RPM)
-              .i(0)
-              .d(0)
+              .p(0.045)
+              .i(0.0001) // motor tick ve kotu mountlanmıs kol icin
+              .d(0.01)
+              .iZone(2)
               .outputRange(-1, 1);
 
     armConfig.closedLoop
               .maxMotion
-              .maxAcceleration(1500)
-              .maxVelocity(2500)
-              .allowedClosedLoopError(0);
+              .maxAcceleration(3500)
+              .maxVelocity(5000)
+              .allowedClosedLoopError(1.5);
 
 
 
     armMotor.configure(armConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+
+  
                                                                                    
   }
 
@@ -108,14 +114,12 @@ public class ArmSubsystem extends SubsystemBase {
   }
 
   public void setBrakeMode() { // fren
-    armConfig = new SparkMaxConfig();
     armConfig.idleMode(IdleMode.kBrake);
 
     armMotor.configure(armConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
   }
 
   private void setCoastMode() {
-    armConfig = new SparkMaxConfig();
     armConfig.idleMode(IdleMode.kCoast);
 
     armMotor.configure(armConfig, ResetMode.kNoResetSafeParameters, PersistMode.kNoPersistParameters);
@@ -137,9 +141,29 @@ public class ArmSubsystem extends SubsystemBase {
     return armEncoder.getVelocity() * (2 * Math.PI /*/ ArmConstants.GEAR_RATIO*/) / 60.0; 
   }
 
+  public SparkMaxConfig getConfig() {
+    return armConfig;
+  }
+
+  public void configMotor(SparkMaxConfig newConfig, ResetMode safeParameters, PersistMode persistParameters) { // configure problem cıkarır
+    armConfig = newConfig;
+    armMotor.configure(newConfig, safeParameters, persistParameters);
+  }
+
+  public void configAllowedError() { // configure problem cıkarır
+    armConfig.closedLoop.maxMotion.allowedClosedLoopError(allowedErr);
+    armMotor.configure(armConfig, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
+  }
+
+  public void configAllowedError(double allowedErr) { // configure problem cıkarır
+    armConfig.closedLoop.maxMotion.allowedClosedLoopError(allowedErr);
+    armMotor.configure(armConfig, ResetMode.kNoResetSafeParameters, PersistMode.kPersistParameters);
+  }
+
   public void setPosition(double setpointDeg) {
+    // allowedErr = Math.abs(setpointDeg * ArmConstants.ALLOWED_ERROR);
     double angleRads = Math.toRadians(setpointDeg);
-    double velocityRadPerSeconds = 0.0;
+    double velocityRadPerSeconds = Math.PI / 2;
 
     double ffVolts = armFF.calculate(angleRads, velocityRadPerSeconds);
 
@@ -150,6 +174,7 @@ public class ArmSubsystem extends SubsystemBase {
   }
 
   public void setPosition(ArmFeedforward ff ,double setpointDeg) {
+    // allowedErr = Math.abs(setpointDeg * ArmConstants.ALLOWED_ERROR);
     double angleRads = Math.toRadians(setpointDeg);
     double velocityRadPerSeconds = 0.0;
 
@@ -169,11 +194,18 @@ public class ArmSubsystem extends SubsystemBase {
     return armEncoder.getVelocity();
   }
 
-  public boolean atPosition(double setpoint) {
-    double allowedErr = setpoint * ArmConstants.ALLOWED_ERROR;
+  public boolean atPositionRelative(double setpoint) {
+    allowedErr = Math.abs(setpoint * ArmConstants.ALLOWED_ERROR);
     double err = Math.abs(setpoint - getEncoderPosition());
 
     return err <= allowedErr;
+  }
+
+  public boolean atPosition(double setpoint) {
+    double err = Math.abs(setpoint - getEncoderPosition());
+
+    return err <= ArmConstants.ALLOWED_ERROR_DEG;
+    
   }
 
   public void readySysIDRoutine() {
