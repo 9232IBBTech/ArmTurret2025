@@ -25,6 +25,7 @@ import edu.wpi.first.units.measure.MutVelocity;
 import edu.wpi.first.units.measure.MutVoltage;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.wpilibj.DataLogManager;
+import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.units.Units;
@@ -44,11 +45,13 @@ public class ArmSubsystem extends SubsystemBase {
   private SparkClosedLoopController armPIDController;
   private SysIdRoutine sysId;
   private double allowedErr;
+  private boolean isControlledManually = false;
 
   private final MutAngle mut_AnglePosition = new MutAngle(0, 0, Radians); // CPU korumaları
   private final MutVoltage mut_AppliedVoltage = new MutVoltage(0, 0, Units.Volts);
   private final MutAngularVelocity mut_AngularVelocity = new MutAngularVelocity(0, 0, Units.RadiansPerSecond);
   private final ArmFeedforward armFF = new ArmFeedforward(2, 0.6, 0.6, 0.6); // 2.3449, 2.03, 0.49, 0.53973
+  private final DigitalInput limitSwitch = new DigitalInput(ArmConstants.LIMIT_SWITCH_PIN);
 
   public ArmSubsystem() {
 
@@ -76,9 +79,9 @@ public class ArmSubsystem extends SubsystemBase {
 
 
     armConfig.closedLoop
-              .p(0.045)
+              .p(0.035)
               .i(0.0001) // motor tick ve kotu mountlanmıs kol icin
-              .d(0.01)
+              .d(0.015)
               .iZone(2)
               .outputRange(-1, 1);
 
@@ -86,7 +89,7 @@ public class ArmSubsystem extends SubsystemBase {
               .maxMotion
               .maxAcceleration(3500)
               .maxVelocity(5000)
-              .allowedClosedLoopError(1.5);
+              .allowedClosedLoopError(ArmConstants.ALLOWED_ERROR_DEG);
 
 
 
@@ -101,8 +104,13 @@ public class ArmSubsystem extends SubsystemBase {
     // This method will be called once per scheduler run
     SmartDashboard.putNumber("Encoder Reading: ", armEncoder.getPosition());
     SmartDashboard.putNumber("the voltage", armMotor.getBusVoltage() * armMotor.getAppliedOutput());
+    SmartDashboard.putBoolean("Switch", limitSwitch.get());
     // SmartDashboard.putNumber("SoftLimit", armMotor.configAccessor.softLimit.getForwardSoftLimit());
     // SmartDashboard.putBoolean("Limit hit", armMotor.getFault(SparkMax.FaultID.kSoftLimitFwd));
+
+    if (!limitSwitch.get() && isControlledManually) {
+      zeroEncoder();
+    }
   }
 
   public void zeroEncoder() {
@@ -262,5 +270,13 @@ public class ArmSubsystem extends SubsystemBase {
     System.out.println("Running Dynamic Reverse");
     // SmartDashboard.putBoolean("tamam", true);
       return sysId.dynamic(SysIdRoutine.Direction.kReverse);
+  }
+
+  public void changeManualControlState(boolean state) {
+    isControlledManually = state;
+  }
+
+  public boolean getSwitch()  {
+    return limitSwitch.get();
   }
 }

@@ -106,6 +106,7 @@ public class RobotContainer
                                                                                    0));
 
   private final ArmSubsystem armSubsystem = new ArmSubsystem();
+  private final ArmVelocityWithPositionCommand armVWPCommand = new ArmVelocityWithPositionCommand(armSubsystem, () -> driverXbox.x().getAsBoolean(), 3);
 
   /**
    * The container for the robot. Contains subsystems, OI devices, and commands.
@@ -145,10 +146,11 @@ public class RobotContainer
         driveDirectAngleKeyboard);
 
         driverXbox.a().onTrue(new ArmPositionCommand(armSubsystem, 70));
-        driverXbox.leftBumper().onTrue(Commands.runOnce(() -> {armSubsystem.setMotor(0);}, armSubsystem));
+        driverXbox.leftBumper().onTrue(Commands.runOnce(() -> {armSubsystem.setMotor(0.0);}, armSubsystem));
         driverXbox.rightBumper().onTrue(Commands.runOnce(armSubsystem::zeroEncoder, armSubsystem));
         driverXbox.y().whileTrue(new ArmVelocityCommand(armSubsystem, ArmConstants.MANUAL_FORWARD_SPEED));
         driverXbox.b().whileTrue(new ArmVelocityCommand(armSubsystem, ArmConstants.MANUAL_REVERSE_SPEED));
+        driverXbox.x().onTrue(armVWPCommand);
 
     if (RobotBase.isSimulation())
     {

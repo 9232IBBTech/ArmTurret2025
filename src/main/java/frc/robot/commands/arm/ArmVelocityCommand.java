@@ -33,6 +33,7 @@ public class ArmVelocityCommand extends Command {
   public void initialize() {
     // armSubsystem.setMotor(cycle);
     // armSubsystem.setVelocity(cycle);
+    armSubsystem.changeManualControlState(true);
     
     double radPerSecond = cycle * MotorConstants.NEO_MAX_RPM * (2 * Math.PI) * ArmConstants.GEAR_RATIO *(RobotController.getBatteryVoltage() / 12.0) / 60.0;
 
@@ -52,6 +53,6 @@ public class ArmVelocityCommand extends Command {
   // Returns true when the command should end.
   @Override
   public boolean isFinished() {
-    return false;
+    return !armSubsystem.getSwitch();
   }
 }

@@ -32,7 +32,6 @@ public class StationaryArmCommand extends Command {
   @Override
   public void initialize() {
     SmartDashboard.putBoolean("stationary", true);
-    System.out.println("StationaryArmCommand");
   }
 
   // Called every time the scheduler runs while the command is scheduled.

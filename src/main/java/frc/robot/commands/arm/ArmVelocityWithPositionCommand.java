@@ -17,6 +17,7 @@ public class ArmVelocityWithPositionCommand extends Command {
   private double addition;
   private double totalAddition;
   private BooleanSupplier button;
+  private int counter = 0;
 
   public ArmVelocityWithPositionCommand(
     ArmSubsystem armSubsystem,
@@ -34,6 +35,7 @@ public class ArmVelocityWithPositionCommand extends Command {
   // Called when the command is initially scheduled.
   @Override
   public void initialize() {
+    armSubsystem.changeManualControlState(true);
     totalAddition = 0;
   }
 
@@ -59,6 +61,6 @@ public class ArmVelocityWithPositionCommand extends Command {
   // Returns true when the command should end.
   @Override
   public boolean isFinished() {
-    return armSubsystem.atPositionRelative(armSubsystem.getEncoderPosition() + totalAddition);
+    return armSubsystem.atPosition(armSubsystem.getEncoderPosition() + totalAddition);
   }
 }
