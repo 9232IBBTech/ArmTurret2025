@@ -27,6 +27,7 @@ import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.Constants.OperatorConstants;
 import frc.robot.commands.arm.ArmVelocityWithPositionCommand;
+import frc.robot.commands.arm.ProfiledPositionArmCommand;
 import frc.robot.commands.arm.StationaryArmCommand;
 import frc.robot.commands.arm.ArmPositionCommand;
 import frc.robot.commands.arm.ArmVelocityCommand;
@@ -106,7 +107,9 @@ public class RobotContainer
                                                                                    0));
 
   private final ArmSubsystem armSubsystem = new ArmSubsystem();
-  private final ArmVelocityWithPositionCommand armVWPCommand = new ArmVelocityWithPositionCommand(armSubsystem, () -> driverXbox.x().getAsBoolean(), 3);
+  private final ArmVelocityWithPositionCommand armVWPCommandForward = new ArmVelocityWithPositionCommand(armSubsystem, () -> driverXbox.x().getAsBoolean(), 3);
+  private final ArmVelocityWithPositionCommand armVWPCommandReverse = new ArmVelocityWithPositionCommand(armSubsystem, () -> driverXbox.x().getAsBoolean(), -3);
+
 
   /**
    * The container for the robot. Contains subsystems, OI devices, and commands.
@@ -150,7 +153,9 @@ public class RobotContainer
         driverXbox.rightBumper().onTrue(Commands.runOnce(armSubsystem::zeroEncoder, armSubsystem));
         driverXbox.y().whileTrue(new ArmVelocityCommand(armSubsystem, ArmConstants.MANUAL_FORWARD_SPEED));
         driverXbox.b().whileTrue(new ArmVelocityCommand(armSubsystem, ArmConstants.MANUAL_REVERSE_SPEED));
-        driverXbox.x().onTrue(armVWPCommand);
+        driverXbox.povUp().onTrue(armVWPCommandForward);
+        driverXbox.povDown().onTrue(armVWPCommandReverse);
+        driverXbox.x().onTrue(new SequentialCommandGroup(new ProfiledPositionArmCommand(armSubsystem, 80)));
 
     if (RobotBase.isSimulation())
     {

@@ -4,26 +4,25 @@
 
 package frc.robot.commands.arm;
 
-import static edu.wpi.first.units.Units.Volts;
-
-import edu.wpi.first.math.controller.ArmFeedforward;
-import edu.wpi.first.units.measure.MutVoltage;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj2.command.Command;
+import frc.robot.Robot;
 import frc.robot.subsystems.ArmSubsystem;
 
 /* You should consider using the more terse Command factories API instead https://docs.wpilib.org/en/stable/docs/software/commandbased/organizing-command-based.html#defining-commands */
-public class StationaryArmCommand extends Command {
-  /** Creates a new StattionaryArmCommand. */
+public class ProfiledPositionArmCommand extends Command {
+  /** Creates a new ProfiledPositionArmCommand. */
 
   private ArmSubsystem armSubsystem;
-  private final ArmFeedforward armFF = new ArmFeedforward(0, 0.7, 0.0, 0.0);
+  private double positionDeg;
 
-  private final MutVoltage volts = new MutVoltage(0, 0, Volts);
+  private double ffVolts = 0.0;
+  private double pidOutput = 0.0;
 
-  public StationaryArmCommand(ArmSubsystem armSubsystem) {
+  public ProfiledPositionArmCommand(ArmSubsystem armSubsystem, double positionDeg) {
     // Use addRequirements() here to declare subsystem dependencies.
     this.armSubsystem = armSubsystem;
+    this.positionDeg = positionDeg;
 
     addRequirements(armSubsystem);
   }
@@ -31,28 +30,29 @@ public class StationaryArmCommand extends Command {
   // Called when the command is initially scheduled.
   @Override
   public void initialize() {
-    SmartDashboard.putBoolean("stationary", true);
+    armSubsystem.changeManualControlState(false);
+    armSubsystem.resetProfiledPIDController();
   }
 
   // Called every time the scheduler runs while the command is scheduled.
   @Override
   public void execute() {
-    //armSubsystem.setPosition(armFF, armSubsystem.getEncoderPosition()); //OLMAAAAZZ TODO; Çakışma olabilir (rio ve motor kontrolcü)
-    volts.mut_replace(armFF.calculate(armSubsystem.getPositionRad(), 0), Volts);
+    ffVolts = armSubsystem.calculateWithFF(Math.toRadians(positionDeg), 0.0);
+    pidOutput = armSubsystem.calculateWithProfile(positionDeg);
 
-    armSubsystem.setVoltage(volts);
+    armSubsystem.setMotor(pidOutput + ffVolts / RobotController.getBatteryVoltage());
+
   }
 
   // Called once the command ends or is interrupted.
   @Override
   public void end(boolean interrupted) {
-    //armSubsystem.setPosition(armSubsystem.getEncoderPosition());
-    SmartDashboard.putBoolean("stationary", false);
+    
   }
 
   // Returns true when the command should end.
   @Override
   public boolean isFinished() {
-    return false;
+    return armSubsystem.atProfiledGoal();
   }
 }

@@ -28,6 +28,9 @@ import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.math.controller.ArmFeedforward;
+import edu.wpi.first.math.controller.ProfiledPIDController;
+import edu.wpi.first.math.trajectory.TrapezoidProfile;
+import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
@@ -52,6 +55,9 @@ public class ArmSubsystem extends SubsystemBase {
   private final MutAngularVelocity mut_AngularVelocity = new MutAngularVelocity(0, 0, Units.RadiansPerSecond);
   private final ArmFeedforward armFF = new ArmFeedforward(2, 0.6, 0.6, 0.6); // 2.3449, 2.03, 0.49, 0.53973
   private final DigitalInput limitSwitch = new DigitalInput(ArmConstants.LIMIT_SWITCH_PIN);
+
+  private final Constraints motionConstraints = new Constraints(2500, 1500);
+  private final ProfiledPIDController profiledPIDController = new ProfiledPIDController(0.035, 0.0001, 0.015, motionConstraints);
 
   public ArmSubsystem() {
 
@@ -87,13 +93,17 @@ public class ArmSubsystem extends SubsystemBase {
 
     armConfig.closedLoop
               .maxMotion
-              .maxAcceleration(3500)
-              .maxVelocity(5000)
+              .maxAcceleration(1500)
+              .maxVelocity(2500)
               .allowedClosedLoopError(ArmConstants.ALLOWED_ERROR_DEG);
 
 
 
     armMotor.configure(armConfig, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+
+    profiledPIDController.setTolerance(ArmConstants.ALLOWED_ERROR_DEG, 10.0);
+    profiledPIDController.setIZone(2.0);
+    profiledPIDController.enableContinuousInput(ArmConstants.ARM_MIN_ANGLE, ArmConstants.ARM_MAX_ANGLE);
 
   
                                                                                    
@@ -247,7 +257,6 @@ public class ArmSubsystem extends SubsystemBase {
   }
 
   public double calculateWithFF(double posRad, double velRad) {
-
     return armFF.calculate(posRad, velRad);
   }
 
@@ -278,5 +287,25 @@ public class ArmSubsystem extends SubsystemBase {
 
   public boolean getSwitch()  {
     return limitSwitch.get();
+  }
+
+  public void resetProfiledPIDController() {
+    profiledPIDController.reset(getEncoderPosition());
+  }
+
+  public void setGoal(double setpointDeg) {
+    profiledPIDController.setGoal(setpointDeg);
+  }
+
+  public double calculateWithProfile(double setpointDeg) {;
+    return profiledPIDController.calculate(getEncoderPosition(), setpointDeg);
+  }
+
+  public double calculateWithProfile() {
+    return profiledPIDController.calculate(getEncoderPosition());
+  }
+
+  public boolean atProfiledGoal() {
+    return profiledPIDController.atGoal();
   }
 }
